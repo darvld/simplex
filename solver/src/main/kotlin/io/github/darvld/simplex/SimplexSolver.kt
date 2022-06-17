@@ -1,10 +1,10 @@
 package io.github.darvld.simplex
 
 public object SimplexSolver {
-    private val Matrix.objectiveRow: Int
+    public val Matrix.objectiveRow: Int
         get() = height - 1
 
-    private val Matrix.rhsColumn: Int
+    public val Matrix.rhsColumn: Int
         get() = width - 1
 
     /**Optimizes the Simplex tableau represented by the given [matrix].*/
@@ -39,8 +39,9 @@ public object SimplexSolver {
 
         // Select a pivot row using the minimum ratio test
         return matrix.getColumn(pivotColumn)
-            .zip(rhsColumn) { rhs, value -> rhs / value }
+            .zip(rhsColumn) { value, rhs -> rhs / value }
             .withIndex()
+            .filter { it.index != matrix.objectiveRow }
             .minByOrNull { it.value }
             ?.index
     }
@@ -49,7 +50,7 @@ public object SimplexSolver {
         val pivotValue = matrix[pivotRow, pivotColumn]
 
         // Set the pivot value to one by multiplying the entire row by its reciprocal
-        matrix.getRow(pivotRow).forEachIndexed { column, value ->
+        matrix.walkRow(pivotRow) { column, value ->
             matrix[pivotRow, column] = value / pivotValue
         }
 

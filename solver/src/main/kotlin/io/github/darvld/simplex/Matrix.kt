@@ -7,15 +7,15 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
 /**Creates a new [Matrix] with the given number of [rows] and [columns], populating the matrix with the results of
- * the [generator] function.*/
+ * the [init] function.*/
 public inline fun Matrix(
     rows: Int,
     columns: Int,
-    generator: (row: Int, column: Int) -> Double = { _, _ -> 0.0 },
+    init: (row: Int, column: Int) -> Double = { _, _ -> 0.0 },
 ): Matrix {
     val data = Array(rows) { row ->
         DoubleArray(columns) { column ->
-            generator(row, column)
+            init(row, column)
         }
     }
 
