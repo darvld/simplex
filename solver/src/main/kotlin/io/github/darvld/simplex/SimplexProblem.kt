@@ -62,7 +62,10 @@ public fun simplexProblem(
         .toList()
 
     // Generate all necessary slack variables
-    val slackVariables = List(constraints.size) {
+    val requiredSlackCount = constraints.count { it.relation == Relation.LessEqual }
+    val requiredExcessCount = constraints.count { it.relation == Relation.GreaterEqual }
+
+    val slackVariables = List(requiredSlackCount + requiredExcessCount) {
         "$SLACK_VARIABLE_PREFIX${it + 1}"
     }
 
