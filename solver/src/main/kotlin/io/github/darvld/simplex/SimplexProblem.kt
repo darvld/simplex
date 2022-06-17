@@ -1,8 +1,11 @@
 package io.github.darvld.simplex
 
+import io.github.darvld.simplex.Expression.Relation
 import io.github.darvld.simplex.SimplexProblem.Goal
 import io.github.darvld.simplex.SimplexProblem.Goal.Maximize
 import io.github.darvld.simplex.SimplexProblem.Goal.Minimize
+import io.github.darvld.simplex.SimplexSolver.objectiveColumn
+import io.github.darvld.simplex.SimplexSolver.objectiveRow
 import io.github.darvld.simplex.SimplexSolver.rhsColumn
 
 private const val SLACK_VARIABLE_PREFIX = "s"
@@ -26,14 +29,19 @@ public fun getSolution(problem: SimplexProblem): Map<String, Double> {
 
     return buildMap {
         for (column in 0 until matrix.width) {
-            if (column == matrix.rhsColumn) continue
+            // Only interpret columns that represent variables
+            if (column == matrix.rhsColumn)
+                continue
 
-            val row = matrix.basicRow(column)
+            // For basic variables, simply retrieve the RHS value.
+            // When interpreting the objective function, divide the RHS value by the objective variable's coefficient
+            val value = when (column) {
+                matrix.objectiveColumn -> with(matrix) { matrix[objectiveRow, rhsColumn] / matrix[objectiveRow, objectiveColumn] }
+                else -> matrix.basicRow(column)?.let { row -> matrix[row, matrix.rhsColumn] } ?: 0.0
+            }
 
-            val value = row?.let { matrix[it, matrix.rhsColumn] } ?: 0.0
-            val variable = problem.variables[column]
-
-            set(variable, value)
+            // Associate the variable and its value in the solution map
+            set(problem.variables[column], value)
         }
     }
 }
