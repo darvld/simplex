@@ -1,5 +1,8 @@
 package io.github.darvld.simplex
 
+import io.github.darvld.simplex.SimplexProblem.Goal
+import io.github.darvld.simplex.SimplexProblem.Goal.Maximize
+import io.github.darvld.simplex.SimplexProblem.Goal.Minimize
 import io.github.darvld.simplex.SimplexSolver.rhsColumn
 
 private const val SLACK_VARIABLE_PREFIX = "s"
@@ -9,25 +12,28 @@ private const val RHS_COLUMN = "RHS"
 public data class SimplexProblem(
     val variables: List<String>,
     val tableau: Matrix,
-)
+    val goal: Goal,
+) {
+    public enum class Goal {
+        Maximize,
+        Minimize,
+    }
+}
 
 /**Interprets a Simplex tableau, returning a map linking each variable with the corresponding result value.*/
 public fun getSolution(problem: SimplexProblem): Map<String, Double> {
     val matrix = problem.tableau
 
-    val basicColumns = IntArray(matrix.height) { row ->
-        matrix.basicColumn(row) ?: throw IllegalStateException(
-            "Problem has no basic feasible solution (row $row has no corresponding basic column)"
-        )
-    }
-
     return buildMap {
-        for (row in 0 until matrix.height) {
-            val column = basicColumns[row]
+        for (column in 0 until matrix.width) {
+            if (column == matrix.rhsColumn) continue
+
+            val row = matrix.basicRow(column)
+
+            val value = row?.let { matrix[it, matrix.rhsColumn] } ?: 0.0
             val variable = problem.variables[column]
 
-            val rhs = matrix[row, matrix.rhsColumn]
-            set(variable, rhs)
+            set(variable, value)
         }
     }
 }
@@ -36,6 +42,7 @@ public fun getSolution(problem: SimplexProblem): Map<String, Double> {
 public fun simplexProblem(
     objective: Expression,
     vararg constraints: Expression,
+    goal: Goal = Maximize,
 ): SimplexProblem {
     // Gather all decision variables used in the problem
     val decisionVariables = listOf(objective, *constraints)
@@ -66,16 +73,7 @@ public fun simplexProblem(
         for (constraint in constraints)
             add(mapExpression(constraint, variables))
 
-        val mappedObjective = mapExpression(objective, variables)
-
-        for (i in 0 until mappedObjective.size) {
-            if (mappedObjective[i] != 0.0) mappedObjective[i] *= -1.0
-        }
-
-        mappedObjective[0] = 1.0
-        mappedObjective[mappedObjective.size - 1] = 0.0
-
-        add(mappedObjective)
+        add(mapObjective(objective, variables, goal))
     }
 
     val tableau = Matrix(
@@ -93,27 +91,22 @@ public fun simplexProblem(
         tableau[constraint, offset + nextSlackColumn] = 1.0
     }
 
-    return SimplexProblem(variables, tableau)
+    return SimplexProblem(variables, tableau, goal)
 }
 
-private fun Matrix.basicColumn(row: Int): Int? {
-    for ((index, column) in columns.withIndex()) {
-        if (isBasicColumn(column, row)) return index
+private fun Matrix.basicRow(column: Int): Int? {
+    var basicRow: Int? = null
+
+    for ((row, value) in getColumn(column).withIndex()) {
+        if (value == 0.0) continue
+        if (value != 1.0) return null
+
+        if (basicRow != null) return null
+
+        basicRow = row
     }
 
-    return null
-}
-
-private fun isBasicColumn(column: Sequence<Double>, row: Int): Boolean {
-    for ((r, value) in column.withIndex()) {
-        if (r == row && value == 1.0)
-            continue
-
-        if (value != 0.0)
-            return false
-    }
-
-    return true
+    return basicRow
 }
 
 private fun mapExpression(
@@ -125,6 +118,25 @@ private fun mapExpression(
             OBJECTIVE_COLUMN -> 0.0
             RHS_COLUMN -> constraint.rightHandValue
             else -> constraint.leftHand.find { it.label == variables[column] }?.coefficient ?: 0.0
+        }
+    }
+}
+
+private fun mapObjective(
+    objective: Expression,
+    variables: List<String>,
+    goal: Goal,
+): DoubleArray {
+    return DoubleArray(variables.size) { column ->
+        val value = when (variables[column]) {
+            OBJECTIVE_COLUMN -> 1.0
+            RHS_COLUMN -> objective.rightHandValue
+            else -> objective.leftHand.find { it.label == variables[column] }?.coefficient ?: 0.0
+        }
+
+        when (goal) {
+            Maximize -> value
+            Minimize -> value * -1
         }
     }
 }
