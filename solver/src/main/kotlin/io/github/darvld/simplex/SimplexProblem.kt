@@ -99,10 +99,32 @@ public fun simplexProblem(
     // Set values for slack variables
     val offset = 1 + decisionVariables.size
     for ((nextSlackColumn, constraint) in (0 until constraints.size).withIndex()) {
-        tableau[constraint, offset + nextSlackColumn] = 1.0
+        tableau[constraint, offset + nextSlackColumn] = if (nextSlackColumn < requiredSlackCount) 1.0 else -1.0
+    }
+
+    require(isCanonical(tableau)) {
+        "Non-canonical problems are not supported yet"
     }
 
     return SimplexProblem(variables, tableau, goal)
+}
+
+private fun isCanonical(matrix: Matrix): Boolean {
+    // If we can rearrange the columns in the matrix so that they form
+    // the identity matrix of order p (the number of constraints), then the tableau is in canonical form
+
+    // Determine the order of the identity matrix (the height of the tableau excluding the objective row)
+    val basicColumns = IntArray(matrix.height - 1) { -1 }
+
+    // Exclude the objective and RHS columns
+    for (column in 1 until matrix.width - 1) matrix.basicRow(column)?.let { row ->
+        // Only one basic column should be present for each row
+        if (basicColumns[row] != -1) return false
+        basicColumns[row] = column
+    }
+
+    // If we were able to locate a basic column for each row, the tableau is in canonical form
+    return basicColumns.none { it == -1 }
 }
 
 private fun Matrix.basicRow(column: Int): Int? {
