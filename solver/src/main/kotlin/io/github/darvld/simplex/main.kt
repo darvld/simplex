@@ -1,6 +1,23 @@
 package io.github.darvld.simplex
 
 public fun main() {
+    val problem = minimizationProblem()
+
+    printTableau(problem)
+
+    SimplexSolver.optimize(problem.tableau)
+
+    println("\nSolution:\n")
+
+    printTableau(problem)
+
+    println("\nResult:")
+    getSolution(problem).forEach { (variable, value) ->
+        println("$variable = $value")
+    }
+}
+
+private fun maximizationProblem(): SimplexProblem {
     val x by Expression.Variable
     val y by Expression.Variable
     val z by Expression.Variable
@@ -22,22 +39,39 @@ public fun main() {
         rightHandValue = 800.0,
     )
 
-    val problem = simplexProblem(
+    return simplexProblem(
         objective,
         firstConstraint,
         secondConstraint,
     )
+}
 
-    printTableau(problem)
+private fun minimizationProblem(): SimplexProblem {
+    val x by Expression.Variable
+    val y by Expression.Variable
+    val z by Expression.Variable
 
-    SimplexSolver.optimize(problem.tableau)
+    // Z = -2x - 3y - 4z
+    val objective = objective((-2 * x), (-3 * y), (-4 * z))
 
-    println("\nSolution:\n")
+    // 3x + 2y + z <= 10
+    val firstConstraint = constraint(
+        (3 * x), (2 * y), (1 * z),
+        relation = Expression.Relation.LessEqual,
+        rightHandValue = 10.0
+    )
 
-    printTableau(problem)
+    // 2x + 5y + 3z <= 15
+    val secondConstraint = constraint(
+        (2 * x), (5 * y), (3 * z),
+        relation = Expression.Relation.LessEqual,
+        rightHandValue = 15.0
+    )
 
-    println("\nResult:")
-    getSolution(problem).forEach { (variable, value) ->
-        println("$variable = $value")
-    }
+    return simplexProblem(
+        objective,
+        firstConstraint,
+        secondConstraint,
+        goal = SimplexProblem.Goal.Minimize
+    )
 }
