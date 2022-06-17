@@ -7,6 +7,9 @@ public object SimplexSolver {
     public val Matrix.rhsColumn: Int
         get() = width - 1
 
+    public val Matrix.objectiveColumn: Int
+        get() = 0
+
     /**Optimizes the Simplex tableau represented by the given [matrix].*/
     public fun optimize(matrix: Matrix) {
         while (!isOptimal(matrix)) {
@@ -18,30 +21,30 @@ public object SimplexSolver {
     }
 
     private fun isOptimal(matrix: Matrix): Boolean {
-        // Check for negative elements in the objective row (excluding the RHS value)
+        // Check for positive elements in the objective row (excluding the RHS value and the objective column)
         return matrix.getRow(matrix.objectiveRow)
             .withIndex()
-            .none { it.index != matrix.rhsColumn && it.value < 0.0 }
+            .none { it.index != matrix.rhsColumn && it.index != matrix.objectiveColumn && it.value > 0.0 }
     }
 
     private fun selectPivotColumn(matrix: Matrix): Int? {
-        // Get the index of the most negative element in the objective row (if such value exists)
+        // Get the index of the largest positive element in the objective row (if such value exists)
         return matrix.getRow(matrix.objectiveRow)
             .withIndex()
-            .filter { it.index != matrix.rhsColumn }
-            .minByOrNull { it.value }
-            ?.takeIf { it.value < 0.0 }
+            .filter { it.index != matrix.rhsColumn && it.value > 0.0 }
+            .maxByOrNull { it.value }
             ?.index
     }
 
     private fun selectPivotRow(matrix: Matrix, pivotColumn: Int): Int? {
-        val rhsColumn = with(matrix) { getColumn(rhsColumn) }
+        val rhsColumn = with(matrix) { getColumn(rhsColumn) }.toList()
 
         // Select a pivot row using the minimum ratio test
         return matrix.getColumn(pivotColumn)
-            .zip(rhsColumn) { value, rhs -> rhs / value }
             .withIndex()
             .filter { it.index != matrix.objectiveRow }
+            .filter { it.value != 0.0 }
+            .map { IndexedValue(it.index, rhsColumn[it.index] / it.value) }
             .minByOrNull { it.value }
             ?.index
     }

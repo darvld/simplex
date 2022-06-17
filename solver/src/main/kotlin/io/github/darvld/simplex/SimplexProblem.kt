@@ -146,8 +146,8 @@ private fun mapObjective(
         }
 
         when (goal) {
-            Maximize -> value
-            Minimize -> value * -1
+            Maximize -> value * -1
+            Minimize -> value
         }
     }
 }
