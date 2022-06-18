@@ -1,9 +1,49 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package io.github.darvld.simplex
 
-private const val PADDING = 4
+import io.github.darvld.simplex.Expression.Term
+
+private const val TABLEAU_COLUMN_PADDING = 4
 
 private fun formatValue(value: Double): String {
     return String.format("%.2f", value)
+}
+
+public inline fun String.toExpressionOrNull(): Expression? {
+    return parseExpression(this)
+}
+
+public fun parseExpression(string: String): Expression? {
+    val trimmed = string.replace(" ", "")
+
+    val equation = Regex("([^<>=]+)([><]?=)(.+)").find(trimmed) ?: return null
+    val (leftHand, relation, rightHand) = equation.destructured
+
+    val terms = Regex("(-?+\\d*)([a-zA-Z]+)").findAll(leftHand)
+        .map {
+            val (coefficient, variable) = it.destructured
+
+            val value = when(coefficient) {
+                "-" -> -1.0
+                "+" -> 1.0
+                else -> coefficient.toDouble()
+            }
+
+            Term(value, variable)
+        }
+        .toList()
+
+    val op = when(relation) {
+        "=" -> Expression.Relation.Equal
+        ">=" -> Expression.Relation.GreaterEqual
+        "<=" -> Expression.Relation.LessEqual
+        else -> throw IllegalArgumentException("Unrecognized operator: \"$relation\"")
+    }
+
+    val rhs = rightHand.toDouble()
+
+    return Expression(terms, op, rhs)
 }
 
 public fun printTableau(problem: SimplexProblem) {
@@ -28,7 +68,7 @@ public fun printMatrix(
     val widths = IntArray(matrix.width) { column ->
         matrix.getColumn(column).maxOf {
             // Add a space before for alignment in case a value is negative
-            formatValue(it).length + PADDING
+            formatValue(it).length + TABLEAU_COLUMN_PADDING
         }
     }
 
