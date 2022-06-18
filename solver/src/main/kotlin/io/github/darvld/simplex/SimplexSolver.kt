@@ -15,9 +15,11 @@ public object SimplexSolver {
     /**Optimizes the Simplex tableau represented by the given [matrix].*/
     public fun optimize(matrix: Matrix) {
         while (!isOptimal(matrix)) {
-            val pivotColumn = selectPivotColumn(matrix) ?: throw IllegalStateException()
+            val pivotColumn = selectPivotColumn(matrix)
+                ?: error("Internal error: unable to select pivot column.")
+
             val pivotRow = selectPivotRow(matrix, pivotColumn)
-                ?: throw IllegalStateException("No pivot row found for column $pivotColumn")
+                ?: throw IllegalStateException("Unable to select a pivot row: the problem is unbounded.")
 
             performPivot(matrix, pivotRow, pivotColumn)
         }

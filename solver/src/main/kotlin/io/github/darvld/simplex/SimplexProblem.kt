@@ -137,7 +137,7 @@ public fun simplexProblem(
     SimplexSolver.optimize(canonical.tableau)
 
     val solution = getSolution(canonical)
-    check(solution[ARTIFICIAL_OBJECTIVE_COLUMN] == 0.0) { "Problem has no feasible solution" }
+    check(solution[ARTIFICIAL_OBJECTIVE_COLUMN] == 0.0) { "Problem has no basic feasible solution" }
 
     // If the optimization was successful, we can now drop the artificial variables
     return dropArtificialVariables(canonical)
