@@ -1,8 +1,5 @@
 package io.github.darvld.simplex
 
-import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KProperty
-
 public data class Expression(
     val leftHand: List<Term>,
     val relation: Relation,
@@ -18,18 +15,9 @@ public data class Expression(
         val coefficient: Double,
         val label: String,
     )
-
-    @JvmInline
-    public value class Variable(public val label: String) {
-        public companion object : ReadOnlyProperty<Any?, Variable> {
-            override fun getValue(thisRef: Any?, property: KProperty<*>): Variable {
-                return Variable(property.name)
-            }
-        }
-    }
 }
 
-public operator fun Number.times(variable: Expression.Variable): Expression.Term {
+public operator fun Number.times(variable: Variable): Expression.Term {
     return Expression.Term(toDouble(), variable.label)
 }
 
@@ -49,8 +37,8 @@ public fun objective(
     // original -> ax1 + bx2 + ... + ixn + c = Z
     // mapped -> -Z - ax1 - bx2 - ... - ixn = -c
     return Expression(
-        leftHand = leftHand.map { it.copy(coefficient = it.coefficient * -1.0) },
-        rightHandValue = constantValue * -1.0,
+        leftHand = leftHand.toList(),
+        rightHandValue = constantValue,
         relation = Expression.Relation.Equal
     )
 }

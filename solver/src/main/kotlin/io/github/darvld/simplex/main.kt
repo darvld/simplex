@@ -1,8 +1,11 @@
+@file:Suppress("DuplicatedCode")
+
 package io.github.darvld.simplex
 
 public fun main() {
-    val problem = minimizationProblem()
+    val problem = nonCanonicalProblem()
 
+    println("Solving problem:")
     printTableau(problem)
 
     SimplexSolver.optimize(problem.tableau)
@@ -17,10 +20,47 @@ public fun main() {
     }
 }
 
+private fun nonCanonicalProblem(): SimplexProblem {
+    val x by Variable
+    val y by Variable
+
+    // Z = 6x + 3y
+    val objective = objective((6 * x), (3 * y))
+
+    // x + y >= 1
+    val firstConstraint = constraint(
+        (1 * x), (1 * y),
+        relation = Expression.Relation.GreaterEqual,
+        rightHandValue = 1.0,
+    )
+
+    // 2x - y >= 1
+    val secondConstraint = constraint(
+        (2 * x), (-1 * y),
+        relation = Expression.Relation.GreaterEqual,
+        rightHandValue = 1.0,
+    )
+
+    // 3y <= 2
+    val thirdConstraint = constraint(
+        (3 * y),
+        relation = Expression.Relation.LessEqual,
+        rightHandValue = 2.0
+    )
+
+    return simplexProblem(
+        objective,
+        firstConstraint,
+        secondConstraint,
+        thirdConstraint,
+        goal = SimplexProblem.Goal.Minimize
+    )
+}
+
 private fun maximizationProblem(): SimplexProblem {
-    val x by Expression.Variable
-    val y by Expression.Variable
-    val z by Expression.Variable
+    val x by Variable
+    val y by Variable
+    val z by Variable
 
     // Z = 7x + 8y + 10z
     val objective = objective((7 * x), (8 * y), (10 * z))
@@ -47,9 +87,9 @@ private fun maximizationProblem(): SimplexProblem {
 }
 
 private fun minimizationProblem(): SimplexProblem {
-    val x by Expression.Variable
-    val y by Expression.Variable
-    val z by Expression.Variable
+    val x by Variable
+    val y by Variable
+    val z by Variable
 
     // Z = -2x - 3y - 4z
     val objective = objective((-2 * x), (-3 * y), (-4 * z))

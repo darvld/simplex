@@ -9,10 +9,10 @@ private fun formatValue(value: Double): String {
 public fun printTableau(problem: SimplexProblem) {
     printMatrix(problem.tableau) { widths ->
         val header = StringBuilder()
-        for ((column, label) in problem.variables.withIndex()) {
-            header.append(label)
+        for ((index, column) in problem.columns.withIndex()) {
+            header.append(column.label)
 
-            val padding = (widths[column] - label.length).coerceAtLeast(0)
+            val padding = (widths[index] - column.label.length).coerceAtLeast(0)
             if (padding > 0) header.append(" ".repeat(padding))
         }
 

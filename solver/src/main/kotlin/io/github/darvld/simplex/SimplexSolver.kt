@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package io.github.darvld.simplex
 
 public object SimplexSolver {
@@ -14,7 +16,8 @@ public object SimplexSolver {
     public fun optimize(matrix: Matrix) {
         while (!isOptimal(matrix)) {
             val pivotColumn = selectPivotColumn(matrix) ?: throw IllegalStateException()
-            val pivotRow = selectPivotRow(matrix, pivotColumn) ?: throw IllegalStateException()
+            val pivotRow = selectPivotRow(matrix, pivotColumn)
+                ?: throw IllegalStateException("No pivot row found for column $pivotColumn")
 
             performPivot(matrix, pivotRow, pivotColumn)
         }
@@ -31,7 +34,7 @@ public object SimplexSolver {
         // Get the index of the largest positive element in the objective row (if such value exists)
         return matrix.getRow(matrix.objectiveRow)
             .withIndex()
-            .filter { it.index != matrix.rhsColumn && it.value > 0.0 }
+            .filter { it.index != matrix.rhsColumn && it.index != matrix.objectiveColumn && it.value > 0.0 }
             .maxByOrNull { it.value }
             ?.index
     }
@@ -42,8 +45,9 @@ public object SimplexSolver {
         // Select a pivot row using the minimum ratio test
         return matrix.getColumn(pivotColumn)
             .withIndex()
+            .filter { rhsColumn[it.index] != 0.0 }
             .filter { it.index != matrix.objectiveRow }
-            .filter { it.value != 0.0 }
+            .filter { it.value > 0.0 }
             .map { IndexedValue(it.index, rhsColumn[it.index] / it.value) }
             .minByOrNull { it.value }
             ?.index

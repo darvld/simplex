@@ -95,3 +95,18 @@ public inline fun Matrix.walkColumn(column: Int, block: (row: Int, value: Double
         block(row, this[row, column])
     }
 }
+
+
+/**Calls the given [block] on each value of the matrix.*/
+@OptIn(ExperimentalContracts::class)
+public inline fun Matrix.walk(block: (row: Int, column: Int, value: Double) -> Unit) {
+    contract {
+        callsInPlace(block, InvocationKind.AT_LEAST_ONCE)
+    }
+
+    for (row in 0 until height) {
+        for (column in 0 until width) {
+            block(row, column, this[row, column])
+        }
+    }
+}
