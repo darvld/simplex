@@ -61,14 +61,22 @@ public fun getSolution(problem: SimplexProblem): Map<String, Double> {
     }
 }
 
-/**Create a [problem definition][SimplexProblem] from the given [objective] function and [constraints].*/
 public fun simplexProblem(
     objective: Expression,
     vararg constraints: Expression,
     goal: Goal = Maximize,
 ): SimplexProblem {
+    return simplexProblem(objective, constraints.toList(), goal)
+}
+
+/**Create a [problem definition][SimplexProblem] from the given [objective] function and [constraints].*/
+public fun simplexProblem(
+    objective: Expression,
+    constraints: List<Expression>,
+    goal: Goal = Maximize,
+): SimplexProblem {
     // Gather all decision variables used in the problem
-    val decisionVariables = listOf(objective, *constraints)
+    val decisionVariables = buildList { add(objective); addAll(constraints) }
         .asSequence()
         .flatMap { it.leftHand }
         .map { it.label }
@@ -113,11 +121,11 @@ public fun simplexProblem(
     )
 
     // Set values for slack variables
-    val offset =  decisionVariables.size + 1
+    val offset = decisionVariables.size + 1
     var nextSlackVariable = 0
 
     for ((row, constraint) in constraints.withIndex()) {
-        tableau[row, offset + nextSlackVariable] = when(constraint.relation) {
+        tableau[row, offset + nextSlackVariable] = when (constraint.relation) {
             Relation.GreaterEqual -> -1.0
             Relation.LessEqual -> 1.0
             else -> continue

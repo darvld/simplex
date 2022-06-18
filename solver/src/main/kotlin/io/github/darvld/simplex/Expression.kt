@@ -34,8 +34,7 @@ public fun objective(
     vararg leftHand: Expression.Term,
     constantValue: Double = 0.0,
 ): Expression {
-    // original -> ax1 + bx2 + ... + ixn + c = Z
-    // mapped -> -Z - ax1 - bx2 - ... - ixn = -c
+    // ax1 + bx2 + ... + ixn + c - Z = 0
     return Expression(
         leftHand = leftHand.toList(),
         rightHandValue = constantValue,
